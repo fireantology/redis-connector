@@ -16,16 +16,16 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.pool.impl.GenericObjectPool.Config;
 import org.mule.RequestContext;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.annotations.Configurable;
-import org.mule.api.annotations.Module;
+import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
 import org.mule.api.annotations.param.Default;
@@ -42,10 +42,10 @@ import org.mule.module.redis.RedisUtils.RedisAction;
 import org.mule.util.StringUtils;
 
 import redis.clients.jedis.BinaryJedis;
-import redis.clients.jedis.BinaryTransaction;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.util.SafeEncoder;
 
@@ -60,8 +60,8 @@ import redis.clients.util.SafeEncoder;
  * 
  * @author MuleSoft, Inc.
  */
-@SuppressWarnings("deprecation")
-@Module(name = "redis", schemaVersion = "3.4", friendlyName = "Redis", minMuleVersion = "3.4.0", description = "Redis Module")
+
+@Connector(name = "redis", schemaVersion = "3.4", friendlyName = "Redis", minMuleVersion = "3.4.0", description = "Redis Module")
 public class RedisModule implements PartitionableObjectStore<Serializable>, MuleContextAware
 {
     private static final String FALLBACK_PARTITION_NAME = "_default";
@@ -112,7 +112,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      */
     @Configurable
     @Optional
-    private Config poolConfig = new JedisPoolConfig();
+    private GenericObjectPoolConfig poolConfig = new JedisPoolConfig();
 
     /**
      * The {@link PartitionableObjectStore} partition to use in case methods from
@@ -1130,7 +1130,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
             {
                 final byte[] keyAsBytes = RedisUtils.toBytes(key);
 
-                final BinaryTransaction t = redis.multi();
+                final Transaction t = redis.multi();
                 final Response<byte[]> getResult = t.hget(RedisUtils.getPartitionHashKey(partitionName),
                     keyAsBytes);
                 final Response<Long> delResult = t.hdel(RedisUtils.getPartitionHashKey(partitionName),
@@ -1282,12 +1282,12 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
         this.defaultPartitionName = defaultPartitionName;
     }
 
-    public Config getPoolConfig()
+    public GenericObjectPoolConfig getPoolConfig()
     {
         return poolConfig;
     }
 
-    public void setPoolConfig(final Config poolConfig)
+    public void setPoolConfig(final GenericObjectPoolConfig poolConfig)
     {
         this.poolConfig = poolConfig;
     }
@@ -1302,4 +1302,16 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
     {
         this.muleContext = muleContext;
     }
+
+	@Override
+	public void clear() throws ObjectStoreException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clear(String arg0) throws ObjectStoreException {
+		// TODO Auto-generated method stub
+		
+	}
 }
