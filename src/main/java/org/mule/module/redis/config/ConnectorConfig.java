@@ -69,6 +69,14 @@ public class ConnectorConfig {
     @Configurable
     @Optional
     private String defaultPartitionName;
+    
+	/**
+	 * The expiration of the cache partition in seconds. 0 means no expiration.
+	 * Default value is 0.
+	 */
+    @Configurable
+    @Optional
+	private int partitionExpiry = 0;
 
 	public String getHost() {
 		return host;
@@ -126,4 +134,12 @@ public class ConnectorConfig {
 		this.defaultPartitionName = defaultPartitionName;
 	}
 
+	public int getPartitionExpiry() {
+		return partitionExpiry;
+	}
+
+	public void setPartitionExpiry(int partitionExpiry) {
+		this.partitionExpiry = partitionExpiry;
+	}
+	
 }

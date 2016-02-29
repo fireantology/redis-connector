@@ -31,6 +31,8 @@ import org.mule.tck.junit4.FunctionalTestCase;
 public class RedisObjectStoreITCase extends FunctionalTestCase
 {
     private PartitionableObjectStore<String> stringObjectStore;
+    PartitionableObjectStore<String> expirableObjectStore;
+    
 
     @Override
     protected String getConfigResources()
@@ -42,10 +44,8 @@ public class RedisObjectStoreITCase extends FunctionalTestCase
     protected void doSetUp() throws Exception
     {
         super.doSetUp();
-
-        stringObjectStore = muleContext.getRegistry()
-            .lookupObject(FakeObjectStoreUser.class)
-            .getObjectStore();
+        stringObjectStore = ((FakeObjectStoreUser)muleContext.getRegistry().lookupObject("fakeObjectStoreUser")).getObjectStore();
+        expirableObjectStore = ((FakeObjectStoreUser)muleContext.getRegistry().lookupObject("fakeObjectStoreUserExpirable")).getObjectStore();
     }
 
     @Test
@@ -191,5 +191,33 @@ public class RedisObjectStoreITCase extends FunctionalTestCase
         receivedPayloads.add((String) ftc.getReceivedMessage(2));
 
         assertEquals(new HashSet<String>(Arrays.asList(payload1, payload2)), receivedPayloads);
+    }
+    
+    @Test
+    public void testPartitionExpiration() throws ObjectStoreException, InterruptedException{
+        final String testPartition = "RedisExpiryIntegrationTest";
+        final String testKey = RandomStringUtils.randomAlphanumeric(20);
+        final String testValue = RandomStringUtils.randomAlphanumeric(20);
+
+        assertTrue(expirableObjectStore.isPersistent());
+        assertEquals(10, expirableObjectStore.retrieve("__expiry", testPartition));
+        
+        Thread.sleep(10000);
+        
+        try
+        {
+        	expirableObjectStore.retrieve("__expiry", testPartition);
+            fail("should have got an ObjectDoesNotExistException");
+        }
+        catch (final ObjectDoesNotExistException odnee)
+        {
+            // NOOP
+        }
+        
+        expirableObjectStore.store(testKey, testValue);
+        assertEquals(10, expirableObjectStore.retrieve("__expiry", testPartition));
+        
+    	expirableObjectStore.disposePartition(testPartition);
+
     }
 }

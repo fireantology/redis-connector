@@ -16,14 +16,21 @@
     </configuration>
 
     <spring:beans>
-        <spring:bean class="org.mule.module.redis.FakeObjectStoreUser"
+        <spring:bean name="fakeObjectStoreUser" class="org.mule.module.redis.FakeObjectStoreUser"
             p:objectStore-ref="localRedis" />
+        <spring:bean name="fakeObjectStoreUserExpirable" class="org.mule.module.redis.FakeObjectStoreUser"
+            p:objectStore-ref="localRedisExpirableStore" />
     </spring:beans>
 
     <!--
          Minimal Config
     -->
     <redis:config name="localRedis" />
+    
+    <!--  
+       Minimal store with configuration 
+   -->
+   <redis:config name="localRedisExpirableStore" partitionExpiry="10" defaultPartitionName="RedisExpiryIntegrationTest"/>
 
     <!--
          Minimal Config with default objectstore partition name using an expression

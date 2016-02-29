@@ -72,6 +72,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
 
     private static final Log LOGGER = LogFactory.getLog(RedisModule.class);
     
+    private static final String EXPIRY_KEY_NAME = "__expiry";
+    
     @Inject
     private MuleContext muleContext;
     private JedisPool jedisPool;
@@ -82,7 +84,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
                 Lifecycle Implementation
     ----------------------------------------------------------*/
     @PostConstruct
-    public void initializeJedis()
+    public void initializeJedis() throws ObjectStoreException
     {
         jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
         
@@ -90,6 +92,11 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
             "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
             config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
             ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
+		
+        if (config.getPartitionExpiry() > 0) {
+			setPartitionExpiry(getActualDefaultPartitionName());
+			LOGGER.info("Expiry of " + config.getPartitionExpiry() + " seconds set on partition " + getActualDefaultPartitionName());
+		}
     }
 
     @PreDestroy
@@ -99,6 +106,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
         jedisPool.destroy();
         LOGGER.info("Redis connector terminated");
     }
+    
+    
 
     /*----------------------------------------------------------
                 Datastructure Commands
@@ -1045,6 +1054,10 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
             throw new ObjectAlreadyExistsException(
                 MessageFactory.createStaticMessage("There is already a value for: " + key));
         }
+        
+		if (config.getPartitionExpiry() > 0) {
+			setPartitionExpiry(partitionName);
+		}
     }
 
     @Override
@@ -1186,6 +1199,30 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
 	@Override
 	public void clear(String partitionName) throws ObjectStoreException {
 		this.disposePartition(partitionName);
+	}
+	
+	private void setPartitionExpiry(final String partitionName) throws ObjectStoreException {
+		try {
+			store(EXPIRY_KEY_NAME, config.getPartitionExpiry(), partitionName);
+		} catch (ObjectAlreadyExistsException e) {
+			LOGGER.debug("Partition expiry already set, nothing to do");
+			return;
+		}
+        final Long result = RedisUtils.run(jedisPool, new RedisAction<Long>()
+        {
+            @Override
+            public Long run()
+            {
+                return  redis.expire(RedisUtils.getPartitionHashKey(partitionName), config.getPartitionExpiry());
+            }
+        });
+
+		if (result == null || result == 0) {
+			throw new ObjectStoreException(MessageFactory.createStaticMessage("Unexpected problem in setting expiry to parition " + partitionName));
+		}
+
+		LOGGER.debug(String.format("Expiry of %s seconds set on partition %s", config.getPartitionExpiry(), partitionName));
+
 	}
 
     /*----------------------------------------------------------
