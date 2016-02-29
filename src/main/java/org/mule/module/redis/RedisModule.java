@@ -21,6 +21,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.mule.DefaultMuleMessage;
 import org.mule.RequestContext;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
@@ -1064,6 +1065,14 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
         {
             throw new ObjectDoesNotExistException(
                 MessageFactory.createStaticMessage("No value found for key: " + key));
+        }
+        
+        //This is needed when using the component has object store for a mule ee cache block
+        //Normally this should be done on mule ee cache component, but is not the case for the moment
+        if (result instanceof MuleEvent) {
+			final MuleEvent sourceEvent = (MuleEvent) result;
+			((DefaultMuleMessage) sourceEvent.getMessage()).setMuleContext(muleContext);
+			return sourceEvent;
         }
 
         return result;
