@@ -15,8 +15,8 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
@@ -24,14 +24,13 @@ import org.apache.commons.logging.LogFactory;
 import org.mule.RequestContext;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
-import org.mule.api.annotations.Configurable;
+import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.callback.SourceCallback;
-import org.mule.api.context.MuleContextAware;
 import org.mule.api.store.ObjectAlreadyExistsException;
 import org.mule.api.store.ObjectDoesNotExistException;
 import org.mule.api.store.ObjectStore;
@@ -39,11 +38,11 @@ import org.mule.api.store.ObjectStoreException;
 import org.mule.api.store.PartitionableObjectStore;
 import org.mule.config.i18n.MessageFactory;
 import org.mule.module.redis.RedisUtils.RedisAction;
+import org.mule.module.redis.config.ConnectorConfig;
 import org.mule.util.StringUtils;
 
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
@@ -62,66 +61,17 @@ import redis.clients.util.SafeEncoder;
  */
 
 @Connector(name = "redis", schemaVersion = "3.4", friendlyName = "Redis", minMuleVersion = "3.4.0", description = "Redis Module")
-public class RedisModule implements PartitionableObjectStore<Serializable>, MuleContextAware
+public class RedisModule implements PartitionableObjectStore<Serializable>
 {
+
+    @Config
+    ConnectorConfig config;
+    
     private static final String FALLBACK_PARTITION_NAME = "_default";
 
     private static final Log LOGGER = LogFactory.getLog(RedisModule.class);
-
-    /**
-     * Redis host.
-     */
-    @Configurable
-    @Optional
-    @Default("localhost")
-    private String host;
-
-    /**
-     * Redis port.
-     */
-    @Configurable
-    @Optional
-    @Default("6379")
-    private int port;
-
-    /**
-     * Connection timeout in milliseconds.
-     */
-    @Configurable
-    @Optional
-    @Default("2000")
-    private int connectionTimeout;
-
-    /**
-     * Reconnection frequency in milliseconds.
-     */
-    @Configurable
-    @Optional
-    @Default("5000")
-    private int reconnectionFrequency;
-
-    /**
-     * Redis password
-     */
-    @Configurable
-    @Optional
-    private String password;
-
-    /**
-     * Object pool configuration.
-     */
-    @Configurable
-    @Optional
-    private GenericObjectPoolConfig poolConfig = new JedisPoolConfig();
-
-    /**
-     * The {@link PartitionableObjectStore} partition to use in case methods from
-     * {@link ObjectStore} are used.
-     */
-    @Configurable
-    @Optional
-    private String defaultPartitionName;
-
+    
+    @Inject
     private MuleContext muleContext;
     private JedisPool jedisPool;
 
@@ -133,12 +83,12 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
     @PostConstruct
     public void initializeJedis()
     {
-        jedisPool = new JedisPool(poolConfig, host, port, connectionTimeout, password);
-
+        jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
+        
         LOGGER.info(String.format(
-            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", host,
-            port, connectionTimeout, StringUtils.repeat("*", StringUtils.length(password)),
-            ToStringBuilder.reflectionToString(poolConfig, ToStringStyle.SHORT_PREFIX_STYLE)));
+            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
+            config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
+            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
     }
 
     @PreDestroy
@@ -968,13 +918,13 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
             catch (final JedisConnectionException jce)
             {
                 LOGGER.warn("Subscriber disconnected from channels: " + channels
-                            + ", will retry connecting in: " + reconnectionFrequency + "ms.", jce);
+                            + ", will retry connecting in: " + config.getReconnectionFrequency() + "ms.", jce);
 
                 try
                 {
                     if (running)
                     {
-                        Thread.sleep(reconnectionFrequency);
+                        Thread.sleep(config.getReconnectionFrequency());
                     }
                 }
                 catch (final InterruptedException ie)
@@ -1042,7 +992,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
 
     private String getActualDefaultPartitionName()
     {
-        if (StringUtils.isBlank(getDefaultPartitionName()))
+        if (StringUtils.isBlank(config.getDefaultPartitionName()))
         {
             return FALLBACK_PARTITION_NAME;
         }
@@ -1051,11 +1001,11 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
 
         if (muleEvent != null)
         {
-            return muleContext.getExpressionManager().parse(getDefaultPartitionName(), muleEvent);
+            return muleContext.getExpressionManager().parse(config.getDefaultPartitionName(), muleEvent);
         }
         else
         {
-            return getDefaultPartitionName();
+            return config.getDefaultPartitionName();
         }
     }
 
@@ -1218,91 +1168,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
             }
         });
     }
-
-    /*----------------------------------------------------------
-                        Java Accessors Gong Show
-     ----------------------------------------------------------*/
-    public String getHost()
-    {
-        return host;
-    }
-
-    public void setHost(final String host)
-    {
-        this.host = host;
-    }
-
-    public int getPort()
-    {
-        return port;
-    }
-
-    public void setPort(final int port)
-    {
-        this.port = port;
-    }
-
-    public int getConnectionTimeout()
-    {
-        return connectionTimeout;
-    }
-
-    public void setConnectionTimeout(final int connectionTimeout)
-    {
-        this.connectionTimeout = connectionTimeout;
-    }
-
-    public int getReconnectionFrequency()
-    {
-        return reconnectionFrequency;
-    }
-
-    public void setReconnectionFrequency(final int reconnectionFrequency)
-    {
-        this.reconnectionFrequency = reconnectionFrequency;
-    }
-
-    public String getPassword()
-    {
-        return password;
-    }
-
-    public void setPassword(final String password)
-    {
-        this.password = password;
-    }
-
-    public String getDefaultPartitionName()
-    {
-        return defaultPartitionName;
-    }
-
-    public void setDefaultPartitionName(final String defaultPartitionName)
-    {
-        this.defaultPartitionName = defaultPartitionName;
-    }
-
-    public GenericObjectPoolConfig getPoolConfig()
-    {
-        return poolConfig;
-    }
-
-    public void setPoolConfig(final GenericObjectPoolConfig poolConfig)
-    {
-        this.poolConfig = poolConfig;
-    }
-
-    public JedisPool getJedisPool()
-    {
-        return jedisPool;
-    }
-
-    @Override
-    public void setMuleContext(final MuleContext muleContext)
-    {
-        this.muleContext = muleContext;
-    }
-
+    
 	@Override
 	public void clear() throws ObjectStoreException {
 		// TODO Auto-generated method stub
@@ -1314,4 +1180,26 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
 		// TODO Auto-generated method stub
 		
 	}
+
+    /*----------------------------------------------------------
+                        Java Accessors Gong Show
+     ----------------------------------------------------------*/
+
+    public JedisPool getJedisPool()
+    {
+        return jedisPool;
+    }
+
+    public void setMuleContext(final MuleContext muleContext)
+    {
+        this.muleContext = muleContext;
+    }
+	
+    public ConnectorConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(ConnectorConfig config) {
+        this.config = config;
+    }
 }

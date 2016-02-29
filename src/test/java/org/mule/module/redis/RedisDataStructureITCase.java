@@ -56,10 +56,10 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
 
         assertFalse(muleClient.send("vm://key-existence.in", "ignored",
-            Collections.singletonMap(KEY_PROP, testKey)).getPayload(Boolean.class));
+            Collections.singletonMap(KEY_PROP, (Object)testKey)).getPayload(Boolean.class));
 
         final MuleMessageCollection writerResults = (MuleMessageCollection) muleClient.send(
-            "vm://strings-writer.in", testPayload, Collections.singletonMap(KEY_PROP, testKey));
+            "vm://strings-writer.in", testPayload, Collections.singletonMap(KEY_PROP, (Object)testKey));
 
         assertEquals(6, writerResults.size());
         assertTrue(writerResults.getMessage(0).getPayload() instanceof byte[]);
@@ -76,22 +76,22 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         Thread.sleep(2000L);
 
         assertTrue(muleClient.send("vm://key-existence.in", "ignored",
-            Collections.singletonMap(KEY_PROP, testKey)).getPayload(Boolean.class));
+            Collections.singletonMap(KEY_PROP, (Object)testKey)).getPayload(Boolean.class));
         assertEquals(testPayload,
-            muleClient.send("vm://strings-reader.in", "ignored", Collections.singletonMap(KEY_PROP, testKey))
+            muleClient.send("vm://strings-reader.in", "ignored", Collections.singletonMap(KEY_PROP, (Object)testKey))
                 .getPayloadAsString());
         assertEquals(
             NullPayload.getInstance(),
             muleClient.send("vm://strings-reader.in", "ignored",
-                Collections.singletonMap(KEY_PROP, testKey + ".ttl")).getPayload());
+                Collections.singletonMap(KEY_PROP, (Object)(testKey + ".ttl"))).getPayload());
         assertEquals(
             testPayload,
             muleClient.send("vm://strings-reader.in", "ignored",
-                Collections.singletonMap(KEY_PROP, testKey + ".other")).getPayloadAsString());
+                Collections.singletonMap(KEY_PROP, (Object)(testKey + ".other"))).getPayloadAsString());
         assertEquals(
             testKey,
             muleClient.send("vm://strings-reader.in", "ignored",
-                Collections.singletonMap(KEY_PROP, testKey + ".value")).getPayloadAsString());
+                Collections.singletonMap(KEY_PROP, (Object)(testKey + ".value"))).getPayloadAsString());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testPayload = RandomStringUtils.randomAlphanumeric(20);
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
         final MuleMessage response = muleClient.send("vm://incr-decr.in", testPayload,
-            Collections.singletonMap(KEY_PROP, testKey));
+            Collections.singletonMap(KEY_PROP, (Object)testKey));
 
         assertEquals(-2L, response.getPayload());
     }
@@ -112,7 +112,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
         final String testField = UUID.getUUID();
 
-        final Map<String, String> props = new HashMap<String, String>();
+        final Map<String, Object> props = new HashMap<String, Object>();
         props.put(KEY_PROP, testKey);
         props.put(FIELD_PROP, testField);
 
@@ -136,7 +136,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
         final String testField = UUID.getUUID();
 
-        final Map<String, String> props = new HashMap<String, String>();
+        final Map<String, Object> props = new HashMap<String, Object>();
         props.put(KEY_PROP, testKey);
         props.put(FIELD_PROP, testField);
 
@@ -150,9 +150,9 @@ public class RedisDataStructureITCase extends FunctionalTestCase
     {
         final String testPayload = RandomStringUtils.randomAlphanumeric(20);
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
-        muleClient.send("vm://lists-writer.in", testPayload, Collections.singletonMap(KEY_PROP, testKey));
+        muleClient.send("vm://lists-writer.in", testPayload, Collections.singletonMap(KEY_PROP, (Object)testKey));
 
-        final Map<String, String> props = new HashMap<String, String>();
+        final Map<String, Object> props = new HashMap<String, Object>();
         props.put(KEY_PROP, testKey);
         props.put(SIDE_PROP, "LEFT");
         assertEquals(testPayload, muleClient.send("vm://lists-reader.in", "ignored", props)
@@ -172,7 +172,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
 
         final MuleMessageCollection writerResults = (MuleMessageCollection) muleClient.send(
-            "vm://sets-writer.in", testPayload, Collections.singletonMap(KEY_PROP, testKey));
+            "vm://sets-writer.in", testPayload, Collections.singletonMap(KEY_PROP, (Object)testKey));
         assertEquals(4, writerResults.size());
         assertEquals(testPayload, writerResults.getMessage(0).getPayloadAsString());
         assertEquals(NullPayload.getInstance(), writerResults.getMessage(1).getPayload());
@@ -180,7 +180,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         assertEquals(testKey, writerResults.getMessage(3).getPayloadAsString());
 
         final MuleMessageCollection readerResults = (MuleMessageCollection) muleClient.send(
-            "vm://sets-reader.in", "ignored", Collections.singletonMap(KEY_PROP, testKey));
+            "vm://sets-reader.in", "ignored", Collections.singletonMap(KEY_PROP, (Object)testKey));
         assertEquals(4, readerResults.size());
         assertEquals(testPayload, readerResults.getMessage(0).getPayloadAsString());
         assertEquals(testPayload, readerResults.getMessage(1).getPayloadAsString());
@@ -194,7 +194,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         String testPayload = RandomStringUtils.randomAlphanumeric(20);
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
 
-        final Map<String, String> props = new HashMap<String, String>();
+        final Map<String, Object> props = new HashMap<String, Object>();
         props.put(KEY_PROP, testKey);
         props.put("score", "1");
         MuleMessageCollection writerResults = (MuleMessageCollection) muleClient.send(
@@ -216,7 +216,7 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         assertEquals(testKey, writerResults.getMessage(3).getPayloadAsString());
 
         final MuleMessageCollection readerResults = (MuleMessageCollection) muleClient.send(
-            "vm://sorted-sets-reader.in", "ignored", Collections.singletonMap(KEY_PROP, testKey));
+            "vm://sorted-sets-reader.in", "ignored", Collections.singletonMap(KEY_PROP, (Object)testKey));
         assertEquals(4, readerResults.size());
         for (int i = 0; i < 4; i++)
         {
@@ -233,14 +233,13 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final String testKey = TEST_KEY_PREFIX + UUID.getUUID();
 
         final MuleMessageCollection writerResults = (MuleMessageCollection) muleClient.send(
-            "vm://sorted-set-incr.in", testPayload, Collections.singletonMap(KEY_PROP, testKey));
+            "vm://sorted-set-incr.in", testPayload, Collections.singletonMap(KEY_PROP, (Object)testKey));
 
         assertEquals(2, writerResults.size());
         assertEquals(3.14, writerResults.getMessage(0).getPayload());
         assertEquals(2.72, writerResults.getMessage(1).getPayload());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testKeyVolatility() throws Exception
     {
@@ -248,8 +247,10 @@ public class RedisDataStructureITCase extends FunctionalTestCase
         final Long expireAtUnixTime = System.currentTimeMillis() / 1000L + 20L;
         final Map<String, ? extends Object> properties = MapUtils.mapWithKeysAndValues(HashMap.class,
             Arrays.asList(KEY_PROP, "expireAtUnixTime"), Arrays.asList(testKey, expireAtUnixTime));
+        final Map<String, Object> props = new HashMap<String, Object>();
+        props.putAll(properties);
         final MuleMessageCollection keyVolatilityResults = (MuleMessageCollection) muleClient.send(
-            "vm://key-volatility.in", "ignored", properties);
+            "vm://key-volatility.in", (Object)"ignored", props);
         assertEquals(5, keyVolatilityResults.size());
 
         final Object[] expectedResults = {true, true, 20L, true, -1L};

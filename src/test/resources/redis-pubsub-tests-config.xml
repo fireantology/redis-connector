@@ -7,17 +7,17 @@
           http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
           http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd">
 
-    <redis:config />
+    <redis:config name="localRedis" />
 
     <flow name="publisher">
         <vm:inbound-endpoint path="publisher.in" />
-        <redis:publish channel="#[message.inboundProperties['target-channel']]" />
+        <redis:publish channel="#[message.inboundProperties['target-channel']]" config-ref="localRedis"/>
         <redis:publish channel="#[message.inboundProperties['target-channel']]"
-            message="#[message.inboundProperties['second-message-payload']]" />
+            message="#[message.inboundProperties['second-message-payload']]" config-ref="localRedis" />
     </flow>
 
     <flow name="subscriber">
-        <redis:subscribe>
+        <redis:subscribe config-ref="localRedis">
             <!-- Channels are selected by patterns -->
             <redis:channels>
                 <redis:channel>mule.test.single.channel</redis:channel>
