@@ -20,7 +20,6 @@ import org.apache.commons.logging.LogFactory;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.util.SafeEncoder;
 
 public abstract class RedisUtils
@@ -117,32 +116,8 @@ public abstract class RedisUtils
 
     public static <R> R run(final JedisPool jedisPool, final RedisAction<R> action)
     {
-        final Jedis jedis = jedisPool.getResource();
-        boolean brokenResource = false;
-
-        try
-        {
-            try
-            {
-                return action.runWithJedis(jedis);
-            }
-            catch (final JedisConnectionException jce)
-            {
-                brokenResource = true;
-                throw jce;
-            }
+    	try (Jedis jedis = jedisPool.getResource()) {
+    		return action.runWithJedis(jedis);
         }
-        finally
-        {
-            if (brokenResource)
-            {
-                jedisPool.returnBrokenResource(jedis);
-            }
-            else
-            {
-                jedisPool.returnResource(jedis);
-            }
-        }
-
     }
 }
