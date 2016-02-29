@@ -15,7 +15,6 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
@@ -173,7 +172,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         message is returned.
      */
     @Processor
-    @Inject
     public byte[] set(final String key,
                       @Optional final Integer expire,
                       @Optional @Default("false") final boolean ifNotExists,
@@ -329,7 +327,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         new field is created the message is returned.
      */
     @Processor(name = "hash-set")
-    @Inject
     public byte[] setInHash(final String key,
                             final String field,
                             @Optional @Default("false") final boolean ifNotExists,
@@ -502,7 +499,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         the message is returned.
      */
     @Processor(name = "list-push")
-    @Inject
     public byte[] pushToList(final String key,
                              final ListPushSide side,
                              @Optional @Default("false") final boolean ifExists,
@@ -561,7 +557,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         Otherwise the message is returned.
      */
     @Processor(name = "set-add")
-    @Inject
     public byte[] addToSet(final String key,
                            @Optional @Default("false") final boolean mustSucceed,
                            @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
@@ -647,7 +642,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         returned. Otherwise the message is returned.
      */
     @Processor(name = "sorted-set-add")
-    @Inject
     public byte[] addToSortedSet(final String key,
                                  final double score,
                                  @Optional @Default("false") final boolean mustSucceed,
@@ -793,7 +787,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      * @return the new score of the member.
      */
     @Processor(name = "sorted-set-increment")
-    @Inject
     public Double incrementSortedSet(final String key,
                                      final double step,
                                      @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
@@ -926,7 +919,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>, Mule
      *         returned. Otherwise the message is returned.
      */
     @Processor
-    @Inject
     public byte[] publish(final String channel,
                           @Optional @Default("false") final boolean mustSucceed,
                           @Optional @Default("#[message.payloadAs(java.lang.String)]") final String message,
