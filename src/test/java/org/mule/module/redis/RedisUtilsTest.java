@@ -59,7 +59,6 @@ public class RedisUtilsTest
         });
         assertEquals("Hello", result);
         verify(poolMock).getResource();
-        verify(poolMock).returnResource(any(Jedis.class));
     }
 
     @Test
@@ -83,7 +82,6 @@ public class RedisUtilsTest
             //OK
         }
         verify(poolMock).getResource();
-        verify(poolMock).returnBrokenResource(any(Jedis.class));
     }
 
 }
