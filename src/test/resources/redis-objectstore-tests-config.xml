@@ -34,14 +34,16 @@
     <!--
          Full Config
     -->
-<!--     <spring:beans>
+    <spring:beans>
         <spring:bean name="redisPoolConfiguration" class="org.apache.commons.pool2.impl.GenericObjectPoolConfig"
             p:blockWhenExhausted="true" />
-    </spring:beans> -->
+    </spring:beans>
 
     <redis:config name="localRedisFullConfig" host="localhost"
         port="6379" password="s3cre3t" connectionTimeout="15000"
-        reconnectionFrequency="60000"/>
+        reconnectionFrequency="60000">
+        <redis:pool-config ref="redisPoolConfiguration"/>
+     </redis:config>
 
     <flow name="idempotentFlow">
         <vm:inbound-endpoint path="idempotentFlow.in" />
