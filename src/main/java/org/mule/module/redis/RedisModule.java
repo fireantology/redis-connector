@@ -1171,14 +1171,12 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     
 	@Override
 	public void clear() throws ObjectStoreException {
-		// TODO Auto-generated method stub
-		
+		this.disposePartition(FALLBACK_PARTITION_NAME);
 	}
 
 	@Override
-	public void clear(String arg0) throws ObjectStoreException {
-		// TODO Auto-generated method stub
-		
+	public void clear(String partitionName) throws ObjectStoreException {
+		this.disposePartition(partitionName);
 	}
 
     /*----------------------------------------------------------
