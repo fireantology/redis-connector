@@ -93,9 +93,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     	System.out.println("CHAAGEEEEED");
     	//Looks like post construct is called twice, would be nice to understand why
     	if(jedisPool == null){
-    		
     		if (config.getSentinels().size()>1) {
-    			jedisPool = new JedisSentinelPool("mymaster", config.getSentinels(), config.getPoolConfig(), config.getConnectionTimeout(), config.getPassword());
+    			jedisPool = new JedisSentinelPool("mymaster", config.getSentinels(), config.getPoolConfig(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())));
     			
     			LOGGER.info(String.format(
     		            "Redis connector ready, Sentinels: %s, timeout: %d, password: %s, pool config: %s", config.getSentinels().toArray(new String[config.getSentinels().size()]), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
