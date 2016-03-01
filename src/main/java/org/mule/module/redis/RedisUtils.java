@@ -19,7 +19,7 @@ import org.apache.commons.logging.LogFactory;
 
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.util.Pool;
 import redis.clients.util.SafeEncoder;
 
 public abstract class RedisUtils
@@ -114,7 +114,7 @@ public abstract class RedisUtils
         return patterns;
     }
 
-    public static <R> R run(final JedisPool jedisPool, final RedisAction<R> action)
+    public static <R> R run(final Pool<Jedis> jedisPool, final RedisAction<R> action)
     {
     	try (Jedis jedis = jedisPool.getResource()) {
     		return action.runWithJedis(jedis);

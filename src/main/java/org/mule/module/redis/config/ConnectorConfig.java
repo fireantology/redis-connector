@@ -1,8 +1,12 @@
 package org.mule.module.redis.config;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;
+import org.mule.api.annotations.display.Placement;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.store.ObjectStore;
@@ -18,6 +22,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Default("localhost")
+    @Placement(order = 0, group = "Connection")
     private String host;
 
     /**
@@ -25,6 +30,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Default("6379")
+    @Placement(order = 1, group = "Connection")
     private int port;
 
     /**
@@ -32,6 +38,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Default("2000")
+    @Placement(order = 3, group = "Connection")
     private int connectionTimeout;
 
     /**
@@ -39,6 +46,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Default("5000")
+    @Placement(order = 4, group = "Connection")
     private int reconnectionFrequency;
 
     /**
@@ -46,6 +54,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Optional
+    @Placement(order = 2, group = "Connection")
     private String password;
 
     /**
@@ -53,6 +62,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Optional
+    @Placement(order = 5, group = "Connection")
     private GenericObjectPoolConfig poolConfig = new JedisPoolConfig();
 
     /**
@@ -61,15 +71,24 @@ public class ConnectorConfig {
      */
     @Configurable
     @Optional
+    @Placement(order = 0, group = "General", tab = "ObjectStore")
     private String defaultPartitionName;
     
 	/**
-	 * The expiration of the cache partition in seconds. 0 means no expiration.
-	 * Default value is 0.
+	 * The expiration of the {@link ObjectStore} cache partition in seconds
 	 */
     @Configurable
     @Optional
+    @Placement(order = 1, group = "General", tab = "ObjectStore")
 	private int partitionExpiry = 0;
+    
+	/**
+	 * The set of sentinel servers to connect to
+	 */
+    @Configurable
+    @Optional
+    @Placement(order = 0, group = "Sentinel")
+	private Set<String> sentinels = new HashSet<String>();
 
 	public String getHost() {
 		return host;
@@ -133,6 +152,14 @@ public class ConnectorConfig {
 
 	public void setPartitionExpiry(int partitionExpiry) {
 		this.partitionExpiry = partitionExpiry;
+	}
+
+	public Set<String> getSentinels() {
+		return sentinels;
+	}
+
+	public void setSentinels(Set<String> sentinels) {
+		this.sentinels = sentinels;
 	}
 	
 }

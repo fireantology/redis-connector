@@ -43,10 +43,13 @@ import org.mule.module.redis.config.ConnectorConfig;
 import org.mule.util.StringUtils;
 
 import redis.clients.jedis.BinaryJedis;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.util.Pool;
 import redis.clients.util.SafeEncoder;
 
 /**
@@ -76,7 +79,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     
     @Inject
     private MuleContext muleContext;
-    private JedisPool jedisPool;
+    
+    private Pool<Jedis> jedisPool;
 
     private volatile boolean running = true;
 
@@ -86,14 +90,29 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @PostConstruct
     public void initializeJedis() throws ObjectStoreException
     {
+    	System.out.println("CHAAGEEEEED");
     	//Looks like post construct is called twice, would be nice to understand why
     	if(jedisPool == null){
-	        jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
-	        
-	        LOGGER.info(String.format(
-	            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
-	            config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
-	            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
+    		
+    		if (config.getSentinels().size()>1) {
+    			jedisPool = new JedisSentinelPool("mymaster", config.getSentinels(), config.getPoolConfig(), config.getConnectionTimeout(), config.getPassword());
+    			
+    			LOGGER.info(String.format(
+    		            "Redis connector ready, Sentinels: %s, timeout: %d, password: %s, pool config: %s", config.getSentinels().toArray(new String[config.getSentinels().size()]), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
+    		            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
+    			
+    			if(config.getSentinels().size()<3){
+    	        	LOGGER.warn("You are connected to less than 3 sentinels, this is not a safe production config");
+    	        }
+
+    		} else {
+    			jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
+    	        LOGGER.info(String.format(
+    		            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
+    		            config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
+    		            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
+
+    		}
 			
 	        if (config.getPartitionExpiry() > 0) {
 				setPartitionExpiry(getActualDefaultPartitionName());
@@ -1232,7 +1251,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
                         Java Accessors Gong Show
      ----------------------------------------------------------*/
 
-    public JedisPool getJedisPool()
+    public Pool<Jedis> getJedisPool()
     {
         return jedisPool;
     }
