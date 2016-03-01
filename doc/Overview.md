@@ -32,21 +32,30 @@ If you need to refer to this configuration (in case you have several different c
 
     <redis:config name="localRedis" />
 
-The following demonstrates all the possible configuration options:
+The following demonstrates one example of advanced configuration:
 
     <spring:beans>
-        <spring:bean name="redisPoolConfiguration"
-                     class="redis.clients.jedis.JedisPoolConfig"
-                     p:whenExhaustedAction="#{T(org.apache.commons.pool.impl.GenericObjectPool).WHEN_EXHAUSTED_GROW}" />
+        <spring:bean name="redisPoolConfiguration" class="org.apache.commons.pool2.impl.GenericObjectPoolConfig"
+            p:blockWhenExhausted="true" />
     </spring:beans>
     
     <redis:config name="localRedis"
                   host="localhost"
                   port="6379"
                   password="s3cre3t"
-                  connectionTimeout="15000"
-                  poolConfig-ref="redisPoolConfiguration" />
+                  connectionTimeout="15000">
+         <redis:pool-config ref="redisPoolConfiguration"/>
+     </redis:config>
+     
+If you want to connect to Sentinel to support Master/Slave Redis configuration you can do it in the following way
 
+    <redis:config name="localRedis" connectionTimeout="15000">
+        <redis:sentinels>
+            <redis:sentinel>127.0.0.1:5001</redis:sentinel>
+            <redis:sentinel>127.0.0.1:5002</redis:sentinel>
+            <redis:sentinel>127.0.0.1:5003</redis:sentinel>
+        </redis:sentinels>
+    </redis:config>
 
 ### Datastructure Operations
 
@@ -147,3 +156,8 @@ For example, the following shows how to use the Redis module as the data store f
 
     <redis:config name="localRedis" />
     <pubsubhubbub:config objectStore-ref="localRedis" />
+   
+When using the Redis module has object store you can also specify a custom partition name and an expiration time in seconds that are useful when doing enterprise caching
+
+    <redis:config name="localRedis" partitionExpiry="5" defaultPartitionName="mypartition"/>
+
