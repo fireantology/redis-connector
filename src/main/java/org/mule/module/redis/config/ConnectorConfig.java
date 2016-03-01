@@ -3,7 +3,6 @@ package org.mule.module.redis.config;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;
-import org.mule.api.annotations.display.Placement;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.store.ObjectStore;
@@ -18,8 +17,6 @@ public class ConnectorConfig {
      * Redis host.
      */
     @Configurable
-    @Optional
-    @Placement(order = 0, group = "General", tab = "Single instance")
     @Default("localhost")
     private String host;
 
@@ -27,8 +24,6 @@ public class ConnectorConfig {
      * Redis port.
      */
     @Configurable
-    @Optional
-    @Placement(order = 0, group = "General", tab = "Single instance")
     @Default("6379")
     private int port;
 
@@ -36,7 +31,6 @@ public class ConnectorConfig {
      * Connection timeout in milliseconds.
      */
     @Configurable
-    @Optional
     @Default("2000")
     private int connectionTimeout;
 
@@ -44,7 +38,6 @@ public class ConnectorConfig {
      * Reconnection frequency in milliseconds.
      */
     @Configurable
-    @Optional
     @Default("5000")
     private int reconnectionFrequency;
 

@@ -61,7 +61,7 @@ import redis.clients.util.SafeEncoder;
  * @author MuleSoft, Inc.
  */
 
-@Connector(name = "redis", schemaVersion = "3.4", friendlyName = "Redis", minMuleVersion = "3.4.0", description = "Redis Module")
+@Connector(name = "redis", schemaVersion = "3.7", friendlyName = "Redis", minMuleVersion = "3.7.0", description = "Redis Module")
 public class RedisModule implements PartitionableObjectStore<Serializable>
 {
 
@@ -86,17 +86,20 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @PostConstruct
     public void initializeJedis() throws ObjectStoreException
     {
-        jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
-        
-        LOGGER.info(String.format(
-            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
-            config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
-            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
-		
-        if (config.getPartitionExpiry() > 0) {
-			setPartitionExpiry(getActualDefaultPartitionName());
-			LOGGER.info("Expiry of " + config.getPartitionExpiry() + " seconds set on partition " + getActualDefaultPartitionName());
-		}
+    	//Looks like post construct is called twice, would be nice to understand why
+    	if(jedisPool == null){
+	        jedisPool = new JedisPool(config.getPoolConfig(), config.getHost(), config.getPort(), config.getConnectionTimeout(), config.getPassword());
+	        
+	        LOGGER.info(String.format(
+	            "Redis connector ready, host: %s, port: %d, timeout: %d, password: %s, pool config: %s", config.getHost(),
+	            config.getPort(), config.getConnectionTimeout(), StringUtils.repeat("*", StringUtils.length(config.getPassword())),
+	            ToStringBuilder.reflectionToString(config.getPoolConfig(), ToStringStyle.SHORT_PREFIX_STYLE)));
+			
+	        if (config.getPartitionExpiry() > 0) {
+				setPartitionExpiry(getActualDefaultPartitionName());
+				LOGGER.info(String.format("Expiry of %d seconds set on partition %s", config.getPartitionExpiry(), getActualDefaultPartitionName()));
+			}
+    	}
     }
 
     @PreDestroy
@@ -134,8 +137,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @Processor
     public byte[] set(final String key,
                       @Optional final Integer expire,
-                      @Optional @Default("false") final boolean ifNotExists,
-                      @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                      @Default("false") final boolean ifNotExists,
+                      @Default("#[message.payloadAs(java.lang.String)]") final String value,
                       final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
@@ -226,7 +229,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
      * @return the incremented number.
      */
     @Processor
-    public Long increment(final String key, @Optional @Default("1") final long step)
+    public Long increment(final String key, @Default("1") final long step)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Long>()
         {
@@ -255,7 +258,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
      * @return A byte array with the content of the key
      */
     @Processor
-    public Long decrement(final String key, @Optional @Default("1") final long step)
+    public Long decrement(final String key, @Default("1") final long step)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Long>()
         {
@@ -289,8 +292,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @Processor(name = "hash-set")
     public byte[] setInHash(final String key,
                             final String field,
-                            @Optional @Default("false") final boolean ifNotExists,
-                            @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                            @Default("false") final boolean ifNotExists,
+                            @Default("#[message.payloadAs(java.lang.String)]") final String value,
                             final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
@@ -359,7 +362,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
      * @return the incremented number.
      */
     @Processor(name = "hash-increment")
-    public Long incrementHash(final String key, final String field, @Optional @Default("1") final long step)
+    public Long incrementHash(final String key, final String field, @Default("1") final long step)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Long>()
         {
@@ -461,8 +464,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @Processor(name = "list-push")
     public byte[] pushToList(final String key,
                              final ListPushSide side,
-                             @Optional @Default("false") final boolean ifExists,
-                             @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                             @Default("false") final boolean ifExists,
+                             @Default("#[message.payloadAs(java.lang.String)]") final String value,
                              final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
@@ -518,8 +521,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
      */
     @Processor(name = "set-add")
     public byte[] addToSet(final String key,
-                           @Optional @Default("false") final boolean mustSucceed,
-                           @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                           @Default("false") final boolean mustSucceed,
+                           @Default("#[message.payloadAs(java.lang.String)]") final String value,
                            final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
@@ -604,8 +607,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @Processor(name = "sorted-set-add")
     public byte[] addToSortedSet(final String key,
                                  final double score,
-                                 @Optional @Default("false") final boolean mustSucceed,
-                                 @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                                 @Default("false") final boolean mustSucceed,
+                                 @Default("#[message.payloadAs(java.lang.String)]") final String value,
                                  final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
@@ -687,7 +690,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     public Set<byte[]> getRangeByIndex(final String key,
                                        final int start,
                                        final int end,
-                                       @Optional @Default("ASCENDING") final SortedSetOrder order)
+                                       @Default("ASCENDING") final SortedSetOrder order)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Set<byte[]>>()
         {
@@ -717,7 +720,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     public Set<byte[]> getRangeByScore(final String key,
                                        final double min,
                                        final double max,
-                                       @Optional @Default("ASCENDING") final SortedSetOrder order)
+                                       @Default("ASCENDING") final SortedSetOrder order)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Set<byte[]>>()
         {
@@ -749,7 +752,7 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @Processor(name = "sorted-set-increment")
     public Double incrementSortedSet(final String key,
                                      final double step,
-                                     @Optional @Default("#[message.payloadAs(java.lang.String)]") final String value,
+                                     @Default("#[message.payloadAs(java.lang.String)]") final String value,
                                      final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<Double>()
@@ -880,8 +883,8 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
      */
     @Processor
     public byte[] publish(final String channel,
-                          @Optional @Default("false") final boolean mustSucceed,
-                          @Optional @Default("#[message.payloadAs(java.lang.String)]") final String message,
+                          @Default("false") final boolean mustSucceed,
+                          @Default("#[message.payloadAs(java.lang.String)]") final String message,
                           final MuleEvent muleEvent)
     {
         return RedisUtils.run(jedisPool, new RedisAction<byte[]>()
