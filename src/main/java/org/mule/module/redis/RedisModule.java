@@ -90,7 +90,6 @@ public class RedisModule implements PartitionableObjectStore<Serializable>
     @PostConstruct
     public void initializeJedis() throws ObjectStoreException
     {
-    	System.out.println("CHAAGEEEEED");
     	//Looks like post construct is called twice, would be nice to understand why
     	if(jedisPool == null){
     		if (config.getSentinels().size()>1) {

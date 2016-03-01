@@ -7,6 +7,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;
 import org.mule.api.annotations.display.Placement;
+import org.mule.api.annotations.display.Summary;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.store.ObjectStore;
@@ -46,7 +47,7 @@ public class ConnectorConfig {
      */
     @Configurable
     @Default("5000")
-    @Placement(order = 4, group = "Connection")
+    @Placement(order = 7, group = "Publish/Subscribe")
     private int reconnectionFrequency;
 
     /**
@@ -79,6 +80,7 @@ public class ConnectorConfig {
 	 */
     @Configurable
     @Optional
+    @Summary("The expiration time of the partition in seconds. O means no expiration")
     @Placement(order = 1, group = "General", tab = "ObjectStore")
 	private int partitionExpiry = 0;
     
@@ -87,7 +89,8 @@ public class ConnectorConfig {
 	 */
     @Configurable
     @Optional
-    @Placement(order = 0, group = "Sentinel")
+    @Summary("The list of Sentinel servers in the form host:port (127.0.0.1:5000)")
+    @Placement(order = 8, group = "Sentinel")
 	private Set<String> sentinels = new HashSet<String>();
 
 	public String getHost() {
